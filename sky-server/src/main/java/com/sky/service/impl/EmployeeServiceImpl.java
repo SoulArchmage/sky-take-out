@@ -41,7 +41,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         //密码比对
         // TODO 后期需要进行PBKDF2加密，然后再进行比对
-        password = PasswordUtils.encode(password);
         if (!PasswordUtils.matches(password, employee.getPassword())) {
             //密码错误
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
