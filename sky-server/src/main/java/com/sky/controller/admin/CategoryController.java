@@ -36,4 +36,11 @@ public class CategoryController {
         PageResult pageResult = categoryService.page(categoryPageQueryDTO);
         return Result.success(pageResult);
     }
+
+    @DeleteMapping
+    public Result delete(Long id) {
+        log.info("删除分类：{}", id);
+        categoryService.delete(id);
+        return Result.success();
+    }
 }
