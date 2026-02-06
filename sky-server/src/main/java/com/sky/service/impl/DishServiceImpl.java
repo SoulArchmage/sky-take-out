@@ -40,6 +40,10 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private SetmealDishMapper setmealDishMapper;
 
+    /**
+     * 添加菜品数据
+     * @param dishDTO
+     */
     @Override
     @Transactional
     public void addDish(DishDTO dishDTO) {
@@ -136,6 +140,12 @@ public class DishServiceImpl implements DishService {
             //向口味表插入n条数据
             dishFlavorMapper.insertBatch(flavors);
         }
+    }
+
+    @Override
+    public List<Dish> list(Long categoryId) {
+        List<Dish> list = dishMapper.list(categoryId);
+        return list;
     }
 
 }
