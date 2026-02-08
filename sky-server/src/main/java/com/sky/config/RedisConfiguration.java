@@ -33,8 +33,8 @@ public class RedisConfiguration {
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         //设置RedisTemplate的Key序列化方式
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        //设置RedisTemplate的Value序列化方式
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        //设置RedisTemplate的Value序列化方式，为了能够对updateTime序列化，使用默认的配置
+//        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         log.info("创建RedisTemplate对象成功！");
         return redisTemplate;
     }
