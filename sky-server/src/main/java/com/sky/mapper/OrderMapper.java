@@ -22,4 +22,8 @@ public interface OrderMapper {
     @Update("update orders set status = #{status}, cancel_reason = #{cancelReason}, cancel_time = #{cancelTime}, pay_status = #{payStatus} where id = #{id}")
     void update(Orders order);
 
+    @Select("select count(*) from orders where status = #{status}")
+    Integer countStatue(Integer status);
+
+
 }
