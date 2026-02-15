@@ -5,6 +5,7 @@ import com.sky.context.BaseContext;
 import com.sky.exception.UserNotLoginException;
 import com.sky.properties.JwtProperties;
 import com.sky.service.TokenRedisService;
+import com.sky.utils.IpDeviceTypeUtil;
 import com.sky.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             log.info("当前员工id：{}", empId);
 
             // 判断当前用户是否被踢下线
-            if(!tokenRedisService.isLatestToken(empId, token)){
+            if(!tokenRedisService.isLatestToken(empId, IpDeviceTypeUtil.parseDeviceType(request.getHeader("User-Agent")), token)){
                 throw new UserNotLoginException("用户未登录");
             }
 

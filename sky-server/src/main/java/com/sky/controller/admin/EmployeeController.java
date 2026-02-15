@@ -6,11 +6,14 @@ import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
+import com.sky.entity.LoginDevice;
 import com.sky.properties.JwtProperties;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
+import com.sky.service.LoginDeviceService;
 import com.sky.service.TokenRedisService;
+import com.sky.utils.IpDeviceTypeUtil;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.EmployeeLoginVO;
 import io.swagger.annotations.Api;
@@ -20,7 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.jaxb.SpringDataJaxb;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,6 +43,8 @@ public class EmployeeController {
     private JwtProperties jwtProperties;
     @Autowired
     private TokenRedisService tokenRedisService;
+    @Autowired
+    private LoginDeviceService loginDeviceService;
 
     /**
      * 登录
@@ -47,10 +54,23 @@ public class EmployeeController {
      */
     @PostMapping("/login")
     @ApiOperation("登录")
-    public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO) {
+    public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO, HttpServletRequest httpRequest) {
         log.info("员工登录：{}", employeeLoginDTO);
 
         Employee employee = employeeService.login(employeeLoginDTO);
+
+        // 解析设备类型
+        String userAgent = httpRequest.getHeader("User-Agent");
+        String deviceType = IpDeviceTypeUtil.parseDeviceType(userAgent);
+        String ip = IpDeviceTypeUtil.getClientIp(httpRequest);
+
+//        // 3. 异常登录检测
+//        boolean isAbnormal = loginSecurityService.detectAbnormalLogin(user.getId(), ip);
+//        if (isAbnormal) {
+//            // 需要额外验证（实际项目中可能需要短信验证码）
+//            log.warn("检测到异常登录, userId={}, ip={}", user.getId(), ip);
+//            // return Result.error("检测到异常登录，请进行短信验证");
+//        }
 
         //登录成功后，生成jwt令牌
         Map<String, Object> claims = new HashMap<>();
@@ -61,7 +81,7 @@ public class EmployeeController {
                 claims);
 
         // 保存到Redis（会覆盖旧Token）
-        tokenRedisService.saveUserToken(employee.getId(), token);
+        tokenRedisService.saveUserToken(employee.getId(), deviceType, token);
 
         EmployeeLoginVO employeeLoginVO = EmployeeLoginVO.builder()
                 .id(employee.getId())
@@ -82,8 +102,28 @@ public class EmployeeController {
     @ApiOperation("退出")
     public Result<String> logout() {
         log.info("员工退出");
-        tokenRedisService.deleteUserToken(BaseContext.getCurrentId());
+        tokenRedisService.deleteUserToken(BaseContext.getCurrentId(), "Windows");
         return Result.success();
+    }
+
+    /**
+     * 查看当前登录设备
+     */
+    @GetMapping("/devices")
+    public Result getLoginDevices(@RequestAttribute("userId") Long userId) {
+        List<LoginDevice> devices = loginDeviceService.getUserDevices(userId);
+        return Result.success(devices);
+    }
+
+    /**
+     * 踢出指定设备
+     */
+    @PostMapping("/kickout")
+    public Result kickoutDevice(@RequestAttribute("userId") Long userId,
+                                @RequestParam String deviceType) {
+        loginDeviceService.kickoutDevice(userId, deviceType);
+        tokenRedisService.deleteUserToken(userId, deviceType);
+        return Result.success("设备已踢出");
     }
 
     @PostMapping()
