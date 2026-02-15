@@ -100,9 +100,9 @@ public class EmployeeController {
      */
     @PostMapping("/logout")
     @ApiOperation("退出")
-    public Result<String> logout() {
+    public Result<String> logout(HttpServletRequest httpRequest) {
         log.info("员工退出");
-        tokenRedisService.deleteUserToken(BaseContext.getCurrentId(), "Windows");
+        tokenRedisService.deleteUserToken(BaseContext.getCurrentId(), IpDeviceTypeUtil.parseDeviceType(httpRequest.getHeader("User-Agent")));
         return Result.success();
     }
 
