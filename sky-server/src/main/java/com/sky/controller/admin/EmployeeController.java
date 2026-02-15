@@ -1,6 +1,7 @@
 package com.sky.controller.admin;
 
 import com.sky.constant.JwtClaimsConstant;
+import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
@@ -9,6 +10,7 @@ import com.sky.properties.JwtProperties;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
+import com.sky.service.TokenRedisService;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.EmployeeLoginVO;
 import io.swagger.annotations.Api;
@@ -34,6 +36,8 @@ public class EmployeeController {
     private EmployeeService employeeService;
     @Autowired
     private JwtProperties jwtProperties;
+    @Autowired
+    private TokenRedisService tokenRedisService;
 
     /**
      * 登录
@@ -56,6 +60,9 @@ public class EmployeeController {
                 jwtProperties.getAdminTtl(),
                 claims);
 
+        // 保存到Redis（会覆盖旧Token）
+        tokenRedisService.saveUserToken(employee.getId(), token);
+
         EmployeeLoginVO employeeLoginVO = EmployeeLoginVO.builder()
                 .id(employee.getId())
                 .userName(employee.getUsername())
@@ -74,6 +81,8 @@ public class EmployeeController {
     @PostMapping("/logout")
     @ApiOperation("退出")
     public Result<String> logout() {
+        log.info("员工退出");
+        tokenRedisService.deleteUserToken(BaseContext.getCurrentId());
         return Result.success();
     }
 

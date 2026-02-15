@@ -2,7 +2,9 @@ package com.sky.interceptor;
 
 import com.sky.constant.JwtClaimsConstant;
 import com.sky.context.BaseContext;
+import com.sky.exception.UserNotLoginException;
 import com.sky.properties.JwtProperties;
+import com.sky.service.TokenRedisService;
 import com.sky.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,8 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
     @Autowired
     private JwtProperties jwtProperties;
+    @Autowired
+    private TokenRedisService tokenRedisService;
 
     /**
      * 校验jwt
@@ -48,6 +52,12 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             Claims claims = JwtUtil.parseJWT(jwtProperties.getAdminSecretKey(), token);
             Long empId = Long.valueOf(claims.get(JwtClaimsConstant.EMP_ID).toString());
             log.info("当前员工id：{}", empId);
+
+            // 判断当前用户是否被踢下线
+            if(!tokenRedisService.isLatestToken(empId, token)){
+                throw new UserNotLoginException("用户未登录");
+            }
+
             // 将当前登录用户的id保存到ThreadLocal中
             BaseContext.setCurrentId(empId);
             //3、通过，放行
