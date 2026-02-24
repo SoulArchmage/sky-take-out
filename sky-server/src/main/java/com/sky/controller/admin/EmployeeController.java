@@ -13,6 +13,7 @@ import com.sky.result.Result;
 import com.sky.service.EmployeeService;
 import com.sky.service.LoginDeviceService;
 import com.sky.service.TokenRedisService;
+import com.sky.service.impl.LoginSecurityService;
 import com.sky.utils.IpDeviceTypeUtil;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.EmployeeLoginVO;
@@ -45,6 +46,8 @@ public class EmployeeController {
     private TokenRedisService tokenRedisService;
     @Autowired
     private LoginDeviceService loginDeviceService;
+    @Autowired
+    private LoginSecurityService loginSecurityService;
 
     /**
      * 登录
@@ -64,13 +67,13 @@ public class EmployeeController {
         String deviceType = IpDeviceTypeUtil.parseDeviceType(userAgent);
         String ip = IpDeviceTypeUtil.getClientIp(httpRequest);
 
-//        // 3. 异常登录检测
-//        boolean isAbnormal = loginSecurityService.detectAbnormalLogin(user.getId(), ip);
-//        if (isAbnormal) {
-//            // 需要额外验证（实际项目中可能需要短信验证码）
-//            log.warn("检测到异常登录, userId={}, ip={}", user.getId(), ip);
-//            // return Result.error("检测到异常登录，请进行短信验证");
-//        }
+        // 3. 异常登录检测
+        boolean isAbnormal = loginSecurityService.detectAbnormalLogin(employee.getId(), ip);
+        if (isAbnormal) {
+            // 需要额外验证（实际项目中可能需要短信验证码）
+            log.warn("检测到异常登录, userId={}, ip={}", employee.getId(), ip);
+            return Result.error("检测到异常登录，请进行短信验证");
+        }
 
         //登录成功后，生成jwt令牌
         Map<String, Object> claims = new HashMap<>();
